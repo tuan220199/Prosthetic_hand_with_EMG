@@ -52,21 +52,61 @@ ACTIONS = {
     }
 
 class SearchWindow(PageWindow):
+    """
+    A class representing a window for scanning and connecting to devices.
+    provides a user interface for scanning and connecting devices.
+    inherits from the PageWindow class and extends its functionality.
+
+    Attributes:
+        GF (GForceProfile): An instance of the GForceProfile class for scanning and connecting to devices.
+        devices  (): 
+
+    
+    Methods:
+        initUI(): Initializes the user interface components and sets up the window.
+        goToMain(): Navigates to the main page of the application.
+        loadNewAction(newAction): Loads information and images related to a specific action.
+        scan(): Initiates the device scanning process and updates the UI with scan results.
+        connect(*args): Connects to a device using the provided arguments.
+        make_handleButton(button, *args): Generates a button handler function based on the provided button type and arguments.
+        addData_callbackFunc(value): Callback function for adding data to the UI.
+        UiComponents(): Sets up the user interface components, including buttons and labels.
+    """
     def __init__(self, GF):
+        """
+        Initializes a new instance of the SearchWindow class.
+
+        Args:
+            GF (GForceProfile): An instance of the GForceProfile class for scanning
+                and connecting to devices.
+        """
         super().__init__()
         self.initUI()
         self.GF = GF
         self.devices = []
 
     def initUI(self):
+        """
+        Initializes the user interface components and sets up the window.
+        """
         self.setWindowTitle("Scan for device")
         self.setGeometry(100, 100, 1500, 900)
         self.UiComponents()
 
     def goToMain(self):
+        """
+        Navigates to the main page of the application.
+        """
         self.goto("main")
 
     def loadNewAction(self, newAction):
+        """
+        Loads information and images related to a specific action. Set them into framework.
+
+        Args:
+            newAction (string): name of action to acess data in dictioanry ACTIONS.
+
+        """
         global OFFSET_RMS, ACTIONS
         try:
             action_name, action_path, (action_baseline, action_peak), action_rep = ACTIONS[newAction]
@@ -86,6 +126,12 @@ class SearchWindow(PageWindow):
             print("Error during loading Action: ", e)
     
     def scan(self):
+        """
+        Initiates the device scanning process and 
+        updates the UI with scan results: set Text device found, create connect to device button.
+        Create a button for device connect, layout2 add this button
+        layout0 add layout2
+        """
         scan_results = self.GF.scan(2)
 
         if scan_results:
@@ -101,6 +147,12 @@ class SearchWindow(PageWindow):
             self.l1.setText("No bracelet was found")
 
     def connect(self,*args):
+        """
+        Connects to a device using the provided arguments.
+
+        Args:
+            *args: Additional arguments that may be required for connecting to the device.
+        """
         try:
             self.GF.connect(addr=args[0])
         except:
@@ -114,18 +166,52 @@ class SearchWindow(PageWindow):
         self.l1.setText(f"Connected to {args[0]}")
         
     def make_handleButton(self, button, *args):
+        """
+        Generates a button handler function based on the provided button type and arguments.
+
+        Creates a handler function for various button types in the user interface.
+        The handler function performs different actions based on the button type and any additional arguments provided.
+
+        Args:
+            button (str): The type of button for which the handler function is being created.
+            *args: Additional arguments that may be required for handling certain button types.
+
+        Returns:
+            function: A handler function for the specified button type.
+            scan button: scan devices.
+            connectToDevice: connect devices, set up configuration and data transfer for GF force device, update the fraemwork. 
+            calibrate: calibrates the EMG data visualization scale and baseline.
+            recordMVC: initiates recording of Maximum Voluntary Contraction (MVC) data.
+            pauseMVC: Pause record MVC data and save data.
+            startRecord: Initiates the recording process for experimental data.
+            loadMotion: Loads a new motion/action for recording.
+            stopRecord: Stop adn save the raw EMG data into file.
+            updateMotion: LOad new action.
+        """
         def handleButton():
             global reg,  ACTION, REP, PEAK, PEAK_MULTIPLIER, OFFSET, STARTED, BASELINE, BASELINE_MULTIPLIER
             global OFFSET_RMS, file1
             
             if button == "scan":
+                """
+                Set text scan to the button.
+                run method scan 
+                """
                 self.l1.setText("Scanning...")
                 QtWidgets.qApp.processEvents()
                 self.scan()
                 self.scanButton.setText("Scan Again")       
             
             elif button == "connectToDevice":
-
+                """
+                Connect the device 
+                Set up configuration and data transfer for GF force device
+                set window titlte, layout2 adds layout flo and layout4, layout0 adds layout subj_flo, layout5
+                Load first action is first action in dictionary.
+                layout adds layout3
+                Create myFig (instance of CustomFigCanvas) and adds to layout. 
+                Create and execute myDataLoop thread
+                """
                 self.connect(*args)
                 QtWidgets.qApp.processEvents()
 
@@ -156,11 +242,17 @@ class SearchWindow(PageWindow):
                 myDataLoop.start()
 
             elif button == "caliberate":
+                """
+                Update the figure based text vaöue of e1, e3, e2 and BASELINES
+                """
                 self.myFig.update_scale(int(self.e1.text()))
                 self.myFig.update_amp(float(self.e3.text())* (float(self.e2.text())-BASELINE))
                 OFFSET_RMS = BASELINE
 
             elif button == "recordMVC":
+                """
+                Set the PEAK_MULTIPLIER, BASELINE_MULTIPLIER, and OFFSET_RMS, to prepare for recording
+                """
                 PEAK_MULTIPLIER = 1
                 BASELINE_MULTIPLIER = 1
                 OFFSET_RMS = 0
@@ -170,6 +262,11 @@ class SearchWindow(PageWindow):
                 self.recordMVCButton.setEnabled(False)
 
             elif button == "pauseMVC":
+                """
+                Define the current action by the value text of subj_motion.
+                Update the the current action in the dictionary with BASELINE, PEAK, 
+                Load the next action.
+                """
                 current_action = int(self.subj_motion.text())
                 ACTIONS[current_action][2] = (BASELINE, PEAK)
                 ACTIONS[current_action][3] = 1
@@ -185,7 +282,10 @@ class SearchWindow(PageWindow):
                 self.loadNewAction( current_action+ 1)
 
             elif button == "startRecord":
-                
+                """
+                Update the amplitude of figure by e3*e2
+                open the file in folder recordingfiles 
+                """
                 self.myFig.update_amp(float(self.e3.text())* float(self.e2.text()))
                 self.recordSamplButton.setText("Recording ...")
                 self.recordSamplButton.setEnabled(False)
@@ -194,10 +294,20 @@ class SearchWindow(PageWindow):
                 STARTED= True
 
             elif button == "loadMotion":
+                """
+                Because action is a list of random actions: actions * repetitions 
+                load the first element of list actions
+                Update the number of actiosn left.
+                """
                 self.loadNewAction(actions.pop(0))
                 self.loadMotionButton.setText(f"Load Random Motion ({len(actions)} left)")
             
             elif button == "stopRecord":
+                """
+                Open the folder, open the file text based on subject, shift, motion, rep
+                Update the current action last element value +1 
+                Set adn enable the Record Experiment. 
+                """
                 STARTED = False
                 file1.close()
                 os.makedirs(os.path.dirname(f"Subject_{self.subj_name.text()}/Shift_{self.subj_shift.text()}/"), exist_ok=True)
@@ -220,6 +330,9 @@ class SearchWindow(PageWindow):
                 
 
             elif button == "updateMotion":
+                """
+                Load new action.
+                """
                 try:
                     self.loadNewAction(int(self.subj_motion.text()))
                 except Exception as e:
@@ -243,9 +356,43 @@ class SearchWindow(PageWindow):
         return handleButton
     
     def addData_callbackFunc(self, value):
+        """
+        add new value to the myFig through method addData.
+        """
         self.myFig.addData(value)
 
     def UiComponents(self):
+        """
+        Set up user interface components: buttons, labels, fields, layout of window.
+        Main Layout(self.layout): 
+            Child layout: layout0, layout3, self.myFig
+            Contents: layout1("scan" button and label)
+
+        layout0: 
+            Child layout: layout1, layout2, layout4, layout5, Subject Form Layout
+            Contents: layout1("scan" button and label)
+
+        layout1:
+            child widget: "scan" button and label
+
+        layout2: 
+            Child layout: layout flo, layout4
+
+        layout3:
+            Child Widgets: Input fields and buttons related to calibration and recording
+
+        layout4:
+            Child Widgets: Buttons related to recording MVC and calibration (self.recordMVCButton, self.pauseMVCButton, caliberateButton)
+        
+        layout5:
+            Child Widgets: Label and image related to the current action being performed (self.actionLabel, self.actionImg)
+        
+        Form Layout (self.flo):
+            Contents: Input fields for EMG scale, peak, and MVC scale (self.e1, self.e2, self.e3)
+        
+        Subject Form Layout (self.subj_flo):
+            Contents: Input fields for subject name, motion, repetition, and shift (self.subj_name, self.subj_motion, self.subj_rep, self.subj_shift)
+        """
         global actions
         self.layout = QtWidgets.QVBoxLayout()
         self.layout0 = QtWidgets.QHBoxLayout()
@@ -391,7 +538,13 @@ class SearchWindow(PageWindow):
         self.layout5.addWidget(self.actionImg)
 
 def ondata(data):
+    """
+    Function to write data into a gloabl file: file1 
 
+    Args:
+    data (array 2 dimens/ Pandan dataframe): The raw data.
+    
+    """
     global STARTED, channels, file1
 
         # Data for EMG CH0~CHn repeatly.
@@ -412,6 +565,20 @@ def ondata(data):
 
 def dataSendLoop(addData_callbackFunc):
     # Setup the signal-slot mechanism.
+    """
+    Continuous loop for sending data to the callback function for plotting.
+
+    Args:
+        addData_callbackFunc (function): Callback function to which the data is sent.
+
+    This function sets up the signal-slot mechanism and continuously sends data to the specified callback function for plotting.
+    It iterates over the data channels, calculates features, and emits the data to the callback function.
+
+    Note:
+        This function assumes the availability of global variables: PEAK, PEAK_MULTIPLIER, BASELINE, OFFSET_RMS, BASELINE_MULTIPLIER,
+        ACTIONS, FORWARD, and reg.
+
+    """
     mySrc = Communicate()
     mySrc.data_signal.connect(addData_callbackFunc)
     #time.sleep(3)

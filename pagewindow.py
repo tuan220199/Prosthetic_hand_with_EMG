@@ -1,14 +1,39 @@
 from PyQt5 import QtCore, QtWidgets
 
 class PageWindow(QtWidgets.QMainWindow):
+    """
+    A class to represent a start window and make_handleButton function.
+
+    Attributes:
     
+    Methods:
+        goto: Navigates to other pages in application
+        make_handleButton(button, *args): Generates a button handler function based on the provided button type and arguments.
+    """
     gotoSignal = QtCore.pyqtSignal(str)
     
     def goto(self, name):
         self.gotoSignal.emit(name)
 
     def make_handleButton(self, button, *args):
+        """
+        creates a handler function for a button click event. The handler function
+        performs different actions based on the type of button clicked.
+
+        Args:
+            self: Reference to the current instance of the class.
+            button (str): The type of button for which the handler function is being created.
+            *args: Additional arguments that may be required for handling certain types of buttons.
+
+        Returns:
+            function: A handler function for the specified button type.
+        """
         def handleButton():
+            """
+            searchButton button click: Navigates to search page
+            scan button click: scan devices 
+            connectToDevice button click: Connect device and Navigates to menu page
+            """
             if button == "searchButton":
                 self.goto("search")
 
